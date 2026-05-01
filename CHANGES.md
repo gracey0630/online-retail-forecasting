@@ -58,6 +58,38 @@ We re-ran K-Means after dropping the 7 redundant features (43-feature clean set)
 | C3 Sparse Long-Tail | 1017 | DeepAR |
 | C4 Ultra-Sparse | 8 | SWLY rule |
 
+---
+
+### 4. Baseline models — Phase 3 (notebook 05)
+
+Classical baselines fitted on train+val history, evaluated on test. Serves as the comparison table floor in Phase 5.
+
+| Cluster | Baselines | Best WMAPE |
+|---------|-----------|-----------|
+| C0 | Naive-7, TSB | TSB: 108.0% |
+| C1a | Naive-7, iMAPA | iMAPA: 95.8% |
+| C1b | Naive-7, iMAPA | iMAPA: 102.9% |
+| C2 | Naive-7, AutoETS | AutoETS: 93.9% |
+| C3 | Naive-7, TSB, iMAPA | iMAPA: 110.5% |
+| C4 | SWLY (364-day offset) | 116.6% |
+
+**Key finding**: iMAPA beats the prior team's production ZINB (126.1% WMAPE) on C1 and their TS-HGB (150.1%) on C3 using no features at all. Our Phase 4 models must beat iMAPA, not just the prior team's numbers.
+
+Metrics reported: WMAPE, ε-MAPE (eps=1.0), MAPE (eps=1e-8), NZ-MAPE (sale days only), zero_rate% (fraction of test days with zero actual sales — context for why MAPE is large).
+
+---
+
+## Final model routing
+
+| Cluster | n products | Model |
+|---------|-----------|-------|
+| C0 Erratic | 515 | LGBM |
+| C1a Seasonal (STL ≥ 0.5) | 317 | Prophet |
+| C1b Non-Seasonal (STL < 0.5) | 156 | LGBM |
+| C2 Dense HiVol | 10 | Prophet + global LGBM |
+| C3 Sparse Long-Tail | 1017 | DeepAR |
+| C4 Ultra-Sparse | 8 | SWLY rule |
+
 ## Key files
 
 | File | Description |
@@ -67,3 +99,4 @@ We re-ran K-Means after dropping the 7 redundant features (43-feature clean set)
 | `data/winsor_caps.parquet` | Per-product p99 caps, fit on train only |
 | `data/clustering/clusters_final.parquet` | Final cluster assignments with C1 split |
 | `data/forecasting/c{0-3}_prediction.parquet` | Prior team's predictions — baseline to beat |
+| `data/baselines/c{0,1a,1b,2,3,4}_baselines.parquet` | Phase 3 baseline predictions + actuals |
